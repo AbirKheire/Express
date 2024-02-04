@@ -70,9 +70,30 @@ const updateUser = (req, res) => {
   });
 };
 
+const deleteUserById = (req, res) => {
+  const id = parseInt(req.params.id);
+  const { firstname, lastname, email, city, language } = req.body;
+
+  database
+  .query(
+    "delete from users where id = ?", [id])
+  .then(([result]) => {
+    if(result.affectedRows === 0) {
+      res.sendStatus(404);
+    } else {
+      res.sendStatus(204);
+    }
+  })
+  .catch((err) => {
+    console.error(err);
+    res.sendStatus(500);
+  });
+};
+
 module.exports = {
   getUserById,
   getUsers,
   postUser,
   updateUser,
+  deleteUserById,
 };
