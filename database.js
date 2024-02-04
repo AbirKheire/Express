@@ -19,4 +19,13 @@ database
     console.error(err);
   });
 
+  database
+  .query("select * from users")
+  .then(([users]) => {
+    console.log(users);
+  })
+  .catch((err) => {
+    console.error(err);
+  });
+
 module.exports = database;
