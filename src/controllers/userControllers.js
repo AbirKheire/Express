@@ -1,4 +1,6 @@
 const database = require("../../database");
+const argon2 = require('argon2');
+
 
 const getUsers = (req, res) => {
   let sql = " select * from users ";
@@ -48,43 +50,40 @@ const getUserById = (req, res) => {
 };
 
 
-const postUser = (req, res) => {
-    const { firstname, lastname, email, city, language } = req.body;
+const postUser = async (req, res) => {
+    const { firstname, lastname, email, city, language, hashedPassword } = req.body;
 
-    database
-      .query(
-        "INSERT INTO users(firstname, lastname, email, city, language) VALUES (?,?,?,?,?)",
-        [firstname, lastname, email, city, language]
-      )
-      .then(([result]) => {
-        res.sendStatus(201).send({id: result.insertID});
+        database
+        .query(
+            "INSERT INTO users(firstname, lastname, email, city, language, hashedPassword) VALUES (?,?,?,?,?,?)",
+            [firstname, lastname, email, city, language, hashedPassword]
+        )
+        .then(([result]) => {
+            res.status(201).json({ id: result.insertId });
+        })
+        .catch((err) => {
+            console.error(err);
+            res.sendStatus(422);
+        })
+      };
+
+
+const updateUser = async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { firstname, lastname, email, city, language, hashedPassword } = req.body;
+
+  database
+  .query(
+    "UPDATE users SET (firstname, lastname, email, city, language, hashedPassword) VALUES (?,?,?,?,?,?)",
+    [firstname, lastname, email, city, language, hashedPassword]
+  )
+  .then(([result]) => {
+        res.sendStatus(201).send({id: result.insertId});
       })
       .catch((err) => {
         console.error(err);
         res.sendStatus(500);
       });
-};
-
-const updateUser = (req, res) => {
-  const id = parseInt(req.params.id);
-  const { firstname, lastname, email, city, language } = req.body;
-
-  database
-  .query(
-    "UPDATE users SET firstname = ?, lastname = ?, email = ?, city = ?, language = ?",
-    [firstname, lastname, email, city, language]
-  )
-  .then(([result]) => {
-    if(result.affectedRows === 0) {
-      res.sendStatus(404);
-    } else {
-      res.sendStatus(204);
-    }
-  })
-  .catch((err) => {
-    console.error(err);
-    res.sendStatus(500);
-  });
 };
 
 const deleteUserById = (req, res) => {
@@ -113,4 +112,4 @@ module.exports = {
   postUser,
   updateUser,
   deleteUserById,
-};
+}
