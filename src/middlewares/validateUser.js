@@ -15,8 +15,10 @@ const validateUser = (req, res, next) => {
   );
 
   if (error) {
-    res.status(422).json({ validationErrors: error.details });
+    res.status(422).json({ errors: error.details });
   } else {
     next();
   }
 };
+
+module.exports = validateUser;

@@ -1,5 +1,6 @@
 const database = require("../../database");
 const argon2 = require('argon2');
+const { hashPassword } = require("../middlewares/auth");
 
 
 const getUsers = (req, res) => {
@@ -59,26 +60,29 @@ const postUser = async (req, res) => {
             [firstname, lastname, email, city, language, hashedPassword]
         )
         .then(([result]) => {
-            res.status(201).json({ id: result.insertId });
+            res.status(201).send({ id: result.insertId });
         })
         .catch((err) => {
             console.error(err);
-            res.sendStatus(422);
+            res.sendStatus(500);
         })
       };
 
 
-const updateUser = async (req, res) => {
+const updateUser = (req, res) => {
   const id = parseInt(req.params.id);
+    if (req.user.id !== id) {
+        res.sendStatus(403);
+    }
   const { firstname, lastname, email, city, language, hashedPassword } = req.body;
-
-  database
-  .query(
-    "UPDATE users SET (firstname, lastname, email, city, language, hashedPassword) VALUES (?,?,?,?,?,?)",
-    [firstname, lastname, email, city, language, hashedPassword]
-  )
-  .then(([result]) => {
-        res.sendStatus(201).send({id: result.insertId});
+    database
+      .query("UPDATE users SET firstname = ?, lastname = ?, email = ?, city = ?, language = ?, hashedPassword = ? WHERE id = ?", [firstname, lastname, email, city, language, hashedPassword, id])
+      .then(([result]) => {
+        if (result.affectedRows === 0) {
+         res.sendStatus(404);
+      } else {
+         res.sendStatus(200);
+      }
       })
       .catch((err) => {
         console.error(err);
@@ -106,10 +110,60 @@ const deleteUserById = (req, res) => {
   });
 };
 
+//const postLogin = async (req, res) => {
+  //const { email, hashedPassword } = req.body;
+
+ // database
+ // .query(
+ //   "INSERT INTO users(email, hashedPassword) VALUES (?,?)",
+ //   [email, hashedPassword]
+  //)
+  //.then(([result]) => {
+  //  res.status(201).json({id: result.insertId});
+  //})
+ // .catch((err) => {
+ //   console.error(err);
+ //   res.sendStatus(401);
+ // })
+//};
+
+//const isItDwight = (req, res) => {
+  //if (req.body.email === "dwight@theoffice.com" && req.body.password === "123456") {
+    //res.send("Credentials are valid");
+  //} else {
+   // res.sendStatus(401);
+  //}};
+
+const getUserByEmailWithPasswordAndPassToNext = (req, res, next) => {
+  const { email } = req.body;
+  
+  database
+    
+    .query("select * from users where email = ?", [email])
+    .then(([users]) => {
+      if (users[0] != null) {
+        req.user = users[0];
+
+    next();
+   } else {
+    res.sendStatus(401);
+  }
+})
+     .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error retrieving data from database");
+    });
+  };
+
+
+
+
 module.exports = {
   getUserById,
   getUsers,
   postUser,
   updateUser,
   deleteUserById,
+  //isItDwight,
+  getUserByEmailWithPasswordAndPassToNext,
 }
